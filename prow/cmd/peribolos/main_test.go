@@ -244,6 +244,21 @@ func (c *fakeClient) ListOrgInvitations(org string) ([]github.OrgInvitation, err
 	return ret, nil
 }
 
+func (c *fakeClient) ListFailedOrgInvitations(org string) ([]github.OrgInvitation, error) {
+	var ret []github.OrgInvitation
+	for p := range c.invitees {
+		if p == "fail" {
+			return nil, errors.New("injected list org invitations failure")
+		}
+		ret = append(ret, github.OrgInvitation{
+			TeamMember: github.TeamMember{
+				Login: p,
+			},
+		})
+	}
+	return ret, nil
+}
+
 func (c *fakeClient) RemoveOrgMembership(org, user string) error {
 	if user == "fail" {
 		return errors.New("injected remove org membership failure")

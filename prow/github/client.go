@@ -68,6 +68,7 @@ type OrganizationClient interface {
 	GetOrg(name string) (*Organization, error)
 	EditOrg(name string, config Organization) (*Organization, error)
 	ListOrgInvitations(org string) ([]OrgInvitation, error)
+	ListFailedOrgInvitations(org string) ([]OrgInvitation, error)
 	ListOrgMembers(org, role string) ([]TeamMember, error)
 	HasPermission(org, repo, user string, roles ...string) (bool, error)
 	GetUserPermission(org, repo, user string) (string, error)
@@ -1342,6 +1343,33 @@ func (c *client) ListOrgInvitations(org string) ([]OrgInvitation, error) {
 		return nil, nil
 	}
 	path := fmt.Sprintf("/orgs/%s/invitations", org)
+	var ret []OrgInvitation
+	err := c.readPaginatedResults(
+		path,
+		acceptNone,
+		org,
+		func() interface{} {
+			return &[]OrgInvitation{}
+		},
+		func(obj interface{}) {
+			ret = append(ret, *(obj.(*[]OrgInvitation))...)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+// ListFailedOrgInvitations lists failed invitations to the org.
+//
+// https://docs.github.com/en/rest/reference/orgs#list-failed-organization-invitations
+func (c *client) ListFailedOrgInvitations(org string) ([]OrgInvitation, error) {
+	c.log("ListFailedOrgInvitations", org)
+	if c.fake {
+		return nil, nil
+	}
+	path := fmt.Sprintf("/orgs/%s/failed_invitations", org)
 	var ret []OrgInvitation
 	err := c.readPaginatedResults(
 		path,

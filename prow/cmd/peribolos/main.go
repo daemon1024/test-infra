@@ -790,6 +790,7 @@ func configureOrgMeta(client orgMetadataClient, orgName string, want org.Metadat
 
 type inviteClient interface {
 	ListOrgInvitations(org string) ([]github.OrgInvitation, error)
+	ListFailedOrgInvitations(org string) ([]github.OrgInvitation, error)
 }
 
 func orgInvitations(opt options, client inviteClient, orgName string) (sets.String, error) {
@@ -798,6 +799,17 @@ func orgInvitations(opt options, client inviteClient, orgName string) (sets.Stri
 		return invitees, nil
 	}
 	is, err := client.ListOrgInvitations(orgName)
+	if err != nil {
+		return nil, err
+	}
+	for _, i := range is {
+		if i.Login == "" {
+			continue
+		}
+		invitees.Insert(github.NormLogin(i.Login))
+	}
+
+	is, err = client.ListFailedOrgInvitations(orgName)
 	if err != nil {
 		return nil, err
 	}
